@@ -1,0 +1,7 @@
+Tema 4 NN 
+Teme 8+ (NLP SA)
+Implementare stop dupa n sec (nu mai stiu daca am facut asta) pentru a compara calitatea solutiilor 
+
+Pentru aplicatia alg
+TSP:
+  Numim fisierele cu dataseturile corespunzator pentru a salava datele la fiecare algoritm pentru 1 dataset (ex folder data1 - data1.in apoi rezultatele fiecarui algoritm langa)
