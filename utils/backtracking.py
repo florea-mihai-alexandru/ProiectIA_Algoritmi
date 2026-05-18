@@ -91,7 +91,7 @@ def _backtracking(matrice, n, oras_curent, vizitat, traseu, cost, cost_min, _tra
         vizitat[urmator] = False
 
 
-def rezolva_tsp(cale_fisier):
+def rezolva_tsp(n, matrice):
     """Rezolva TSP prin backtracking recursiv cu prunere branch-and-bound.
 
     Citeste datele din fisierul specificat, ruleaza algoritmul de backtracking
@@ -101,7 +101,8 @@ def rezolva_tsp(cale_fisier):
         cale_fisier: Calea catre fisierul text cu matricea de distante (str).
     """
 
-    n, matrice = citeste_matrice(cale_fisier)
+    # n, matrice = citeste_matrice(cale_fisier)
+
     # print(f"Numar de orase: {n}")
     # print("Matricea de distante:")
     # for rand in matrice:

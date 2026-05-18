@@ -1,4 +1,3 @@
-Tema 4 NN 
 Teme 8+ (NLP SA GA)
 Implementare stop dupa n sec (nu mai stiu daca am facut asta) pentru a compara calitatea solutiilor 
 
