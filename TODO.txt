@@ -4,3 +4,11 @@ Implementare stop dupa n sec (nu mai stiu daca am facut asta) pentru a compara c
 Pentru aplicatia alg
 TSP:
   Numim fisierele cu dataseturile corespunzator pentru a salava datele la fiecare algoritm pentru 1 dataset (ex folder data1 - data1.in apoi rezultatele fiecarui algoritm langa)
+
+
+
+Tinere:
+ 1)Am dat update la requirements
+ 2)Implementat SA si NLP(la NLP ce date ar mai trebui afisate ce sa comparam intre modele inafara de acurate ,f1 si etc)
+ 3)De ce la tsp nu lucreaza graphurile cand alegi mai multi algoritmi?
+ 4)In rest nam obiectii esti bravo
