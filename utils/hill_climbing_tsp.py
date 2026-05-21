@@ -28,6 +28,8 @@ class TSPHillClimbing(SearchProblem):
             for j in range(i + 1, n):
                 self.actiuni.append((i, j))
 
+        self.initial_state = self.generate_random_state()
+
     def getVecini(self, state):
         """
         Generates all possible neighbor actions for a given state.
@@ -118,7 +120,7 @@ class TSPHillClimbing(SearchProblem):
         return [0] + initial_state
 
 
-def rezolva_hill_climbing(orase, nr_orase):
+def rezolva_hill_climbing(orase, nr_orase, restarts=1):
     """
     Solves the TSP using hill climbing with random restarts.
 
@@ -131,7 +133,14 @@ def rezolva_hill_climbing(orase, nr_orase):
             - result: The final state found by the algorithm.
             - result.value: The value (fitness) of the final state.
     """
-    problem = TSPHillClimbing(n=nr_orase, orase=orase)
-    result = hill_climbing_random_restarts(problem, restarts_limit=1)
+    problem = TSPHillClimbing(orase, nr_orase)
 
-    return result, result.value
+    result = hill_climbing_random_restarts(
+        problem,
+        restarts_limit=restarts
+    )
+
+    return {
+        "traseu": result.state,
+        "cost": -result.value,   # because value is negative distance
+    }

@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
-from hill_climbing_tsp import *
-from nearest_neighbor import *
-from backtracking import *
-from io_utils import citeste_matrice, get_orase
+from .hill_climbing_tsp import *
+from .nearest_neighbor import *
+from .backtracking import *
+from .io_utils import citeste_matrice, get_orase
 
 import time
 

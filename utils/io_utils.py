@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 
 def get_orase(nr_orase):
@@ -24,7 +26,12 @@ def get_orase(nr_orase):
     filename = str(nr_orase) + "_cities_file.txt"
     dirr = 'input/' + filename
 
-    with open(dirr, "w") as file:
+    baza = Path(__file__).resolve().parent
+
+    # Construieste calea completa
+    fisier = baza / dirr
+
+    with open(fisier, "w") as file:
         file.write(str(nr_orase) + "\n")
         for i in range(nr_orase):
             for j in range(nr_orase):
@@ -51,9 +58,26 @@ def citeste_matrice(cale_fisier):
         FileNotFoundError: Daca fisierul nu exista la calea specificata.
         ValueError: Daca formatul fisierului este invalid.
     """
-    with open(cale_fisier, 'r') as f:
+
+    baza = Path(__file__).resolve().parent
+
+    # Construieste calea completa
+    fisier = baza / cale_fisier
+
+    with open(fisier, 'r') as f:
         linii = [linie.strip() for linie in f if linie.strip()]
     n = int(linii[0])
     matrice = [[int(x) for x in linii[i + 1].split()] for i in range(n)]
     return n, matrice
 
+
+def calculeaza_matrice_distante(coord):
+    """Calculează matricea de distanțe euclidiene între toate perechile de orașe."""
+    n = len(coord)
+    dist = np.zeros((n, n))
+    for i in range(n):
+        for j in range(n):
+            dx = coord[i][0] - coord[j][0]
+            dy = coord[i][1] - coord[j][1]
+            dist[i][j] = np.sqrt(dx**2 + dy**2)
+    return dist

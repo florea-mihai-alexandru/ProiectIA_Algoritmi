@@ -53,7 +53,7 @@ def rezolva_tsp_nn(n, matrice, start=0):
 
 
 def rezolva_tsp_nn_multistart(n, matrice):
-    traseu_optim, cost_total_optim = rezolva_tsp_nn(n, matrice, 2)
+    traseu_optim, cost_total_optim = rezolva_tsp_nn(n, matrice, 0)
     for i in range(1,n):
         # print(i)
         traseu, cost_total = rezolva_tsp_nn(n, matrice, i)
