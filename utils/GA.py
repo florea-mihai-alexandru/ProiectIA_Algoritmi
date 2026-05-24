@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 import time
-from io_utils import *
+from .io_utils import *
 
 # ══════════════════════════════════════════════════════════════════
 # 1. DEFINIREA PROBLEMEI - ORAȘE ȘI DISTANȚE
@@ -352,6 +352,55 @@ def studiu_tip_selectie():
         print(f"{r['strategie']:<15} {r['distanta']:>15.2f} {r['durata']:>12.2f}")
 
 
+def rezolva_tsp_ga(
+    n,
+    matrice,
+    pop_size=100,
+    n_generatii=300,
+    rata_mutatie=40,
+    tip_selectie="tournament",
+    k_tournament=3,
+    keep_elitism=2
+):
+    """
+    Wrapper compatibil Streamlit (same style as other algorithms).
+    """
+
+    global DIST_MATRIX
+    DIST_MATRIX = matrice  # IMPORTANT: inject matrix
+
+    populatie_initiala = genereaza_populatie(pop_size, n)
+
+    ga_instance = pygad.GA(
+        num_generations=n_generatii,
+        num_parents_mating=max(2, pop_size // 2),
+        fitness_func=fitness_func,
+        initial_population=populatie_initiala,
+        crossover_type=ox_crossover,
+        mutation_type=swap_mutation,
+        mutation_percent_genes=rata_mutatie,
+        parent_selection_type=tip_selectie,
+        K_tournament=k_tournament,
+        keep_elitism=keep_elitism,
+        keep_parents=0,
+        suppress_warnings=True,
+    )
+
+    start = time.perf_counter()
+    ga_instance.run()
+    durata = time.perf_counter() - start
+
+    solutie, fitness, _ = ga_instance.best_solution()
+
+    traseu = [int(x) for x in solutie]
+    cost = -fitness
+
+    return {
+        "traseu": traseu,
+        "cost": cost,
+        "durata": durata,
+        "ga_instance": ga_instance  # useful for plotting convergence
+    }
 # ══════════════════════════════════════════════════════════════════
 # 8. PUNCT DE INTRARE
 # ══════════════════════════════════════════════════════════════════

@@ -5,6 +5,7 @@ from utils.backtracking import rezolva_tsp
 from utils.nearest_neighbor import *
 from utils.io_utils import *
 from utils.hill_climbing_tsp import *
+from utils.GA import rezolva_tsp_ga
 from utils.performance import create_comparison_plot
 
 def run():
@@ -185,6 +186,17 @@ def run():
                     elif algo == "Simulated Annealing":
                         cost = None
                         time.sleep(0.01)
+                    elif algo == "Genetic Algorithm":
+
+                        rezultat = rezolva_tsp_ga(
+                            n,
+                            matrice,
+                            pop_size=params["ga"]["population_size"],
+                            rata_mutatie=int(params["ga"]["mutation_rate"] * 100),
+                            n_generatii=300
+                        )
+
+                        cost = rezultat["cost"]
 
                     else:
                         continue
