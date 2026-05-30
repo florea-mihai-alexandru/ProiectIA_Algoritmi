@@ -1,6 +1,7 @@
 import random
 
 from simpleai.search import SearchProblem, hill_climbing, hill_climbing_random_restarts
+from utils.nearest_neighbor import rezolva_tsp_nn
 
 class TSPHillClimbing(SearchProblem):
     """
@@ -10,7 +11,7 @@ class TSPHillClimbing(SearchProblem):
     The goal is to find a permutation of cities that minimizes the total travel distance.
     """
 
-    def __init__(self, orase, n):
+    def __init__(self, orase, n, variant, init):
         """
         Initializes the TSP problem.
 
@@ -22,6 +23,9 @@ class TSPHillClimbing(SearchProblem):
         super().__init__()
         self.orase = orase
         self.n = n
+
+        self.variant = variant
+        self.init = init
 
         self.actiuni = []
         for i in range(1, n - 1):
@@ -43,9 +47,16 @@ class TSPHillClimbing(SearchProblem):
             list[tuple[int, int]]: List of index pairs representing swap actions.
         """
         actions = []
-        for i in range(1, len(state) - 1):
-            for j in range(i + 1, len(state)):
-                actions.append((i, j))
+
+        if self.variant == "swap":
+            for i in range(1, len(state) - 1):
+                for j in range(i + 1, len(state)):
+                    actions.append((i, j))
+
+        elif self.variant == "2-opt":
+            for i in range(1, len(state) - 2):
+                for j in range(i + 1, len(state) - 1):
+                    actions.append((i, j))
 
         return actions
 
@@ -81,8 +92,14 @@ class TSPHillClimbing(SearchProblem):
         Returns:
             tuple[int]: New state after applying the swap.
         """
+        i, j = action
         new_state = list(state)
-        new_state[action[0]], new_state[action[1]] = new_state[action[1]], new_state[action[0]]
+
+        if self.variant == "swap":
+            new_state[i], new_state[j] = new_state[j], new_state[i]
+
+        elif self.variant == "2-opt":
+            new_state[i:j + 1] = reversed(new_state[i:j + 1])
 
         return tuple(new_state)
 
@@ -106,6 +123,17 @@ class TSPHillClimbing(SearchProblem):
         dist += self.orase[state[-1]][state[0]]
         return -dist
 
+    def generate_initial_state(self):
+        if self.init == "random":
+            return self.generate_random_state()
+
+        elif self.init == "nn":
+            return self.generate_nn_state()
+
+    def generate_nn_state(self):
+        traseu, _ = rezolva_tsp_nn(self.n, self.orase, start=0)
+        return traseu
+
     def generate_random_state(self):
         """
         Generates a random initial state for the TSP.
@@ -120,7 +148,7 @@ class TSPHillClimbing(SearchProblem):
         return [0] + initial_state
 
 
-def rezolva_hill_climbing(orase, nr_orase, restarts=1):
+def rezolva_hill_climbing(orase, nr_orase, restarts=1, variant="swap", init="random"):
     """
     Solves the TSP using hill climbing with random restarts.
 
@@ -133,7 +161,7 @@ def rezolva_hill_climbing(orase, nr_orase, restarts=1):
             - result: The final state found by the algorithm.
             - result.value: The value (fitness) of the final state.
     """
-    problem = TSPHillClimbing(orase, nr_orase)
+    problem = TSPHillClimbing(orase, nr_orase, variant, init)
 
     result = hill_climbing_random_restarts(
         problem,
