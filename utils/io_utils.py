@@ -2,43 +2,53 @@ from pathlib import Path
 
 import numpy as np
 
-def get_orase(nr_orase):
+from pathlib import Path
+import numpy as np
+
+def get_orase(nr_orase, seed=555):
     """
     Generates a symmetric distance matrix for a given number of cities
-    and saves it to a file.
-
-    The distances are randomly generated integers between 1 and 99.
-    The matrix is symmetric, and the diagonal remains zero.
+    and saves it to a file only if the file does not already exist.
 
     Args:
         nr_orase (int): Number of cities.
 
     Returns:
-        str: Path to the generated file containing the distance matrix.
+        str: Path to the dataset file.
     """
-    orase = np.zeros((nr_orase, nr_orase), dtype=int)
-    np.random.seed(1)
-    for i in range(nr_orase):
-        for j in range(i+1, nr_orase):
-            orase[i, j] = np.random.randint(1,100, dtype=int)
-            orase[j, i] = orase[i, j]
 
-    filename = str(nr_orase) + "_cities_file.txt"
-    dirr = 'input/' + filename
+    filename = f"{nr_orase}_cities_file.txt"
+    dirr = Path("input") / filename
 
     baza = Path(__file__).resolve().parent
-
-    # Construieste calea completa
     fisier = baza / dirr
 
+    # If file already exists, return it directly
+    if fisier.exists():
+        return str(dirr)
+
+    # Generate matrix only if file doesn't exist
+    orase = np.zeros((nr_orase, nr_orase), dtype=int)
+
+    np.random.seed(seed)
+
+    for i in range(nr_orase):
+        for j in range(i + 1, nr_orase):
+            orase[i, j] = np.random.randint(1, 1000)
+            orase[j, i] = orase[i, j]
+
+    # Create input directory if it doesn't exist
+    fisier.parent.mkdir(parents=True, exist_ok=True)
+
     with open(fisier, "w") as file:
-        file.write(str(nr_orase) + "\n")
+        file.write(f"{nr_orase}\n")
+
         for i in range(nr_orase):
             for j in range(nr_orase):
-                file.write(str(orase[i, j]) + " ")
+                file.write(f"{orase[i, j]} ")
             file.write("\n")
 
-    return dirr
+    return str(dirr)
 
 def citeste_matrice(cale_fisier):
     """Citeste matricea de distante dintr-un fisier text.

@@ -29,12 +29,12 @@ def run():
         max_cities = st.sidebar.slider("Max cities", 10, 200, 50)
         step = st.sidebar.slider("Step", 1, 20, 5)
 
-    stop_time = st.sidebar.number_input(
-        "Stop time (seconds)",
-        min_value=0.1,
-        value=2.0,
-        step=0.1
-    )
+    # stop_time = st.sidebar.number_input(
+    #     "Stop time (seconds)",
+    #     min_value=0.1,
+    #     value=2.0,
+    #     step=0.1
+    # )
 
     algorithms = st.sidebar.multiselect(
         "Algorithms",
@@ -156,18 +156,18 @@ def run():
                     # -------------------------
                     elif algo == "Backtracking":
 
-                        if n > 12:
-                            continue
+                        if n > 20 and params["backtracking"]["mod"] == "toate":
+                            cost = 0
+                        else:
+                            rezultat = rezolva_tsp(
+                                n,
+                                matrice,
+                                mod=params["backtracking"]["mod"],
+                                y_solutii=params["backtracking"].get("y_solutii", 0),
+                                timp_max=params["backtracking"].get("timp_max", 2)
+                            )
 
-                        rezultat = rezolva_tsp(
-                            n,
-                            matrice,
-                            mod=params["backtracking"]["mod"],
-                            y_solutii=params["backtracking"].get("y_solutii", 0),
-                            timp_max=params["backtracking"].get("timp_max", 2)
-                        )
-
-                        cost = rezultat["cost"] if rezultat["traseu"] else None
+                            cost = rezultat["cost"] if rezultat["traseu"] else None
                     # -------------------------
                     # HILL CLIMBING
                     # -------------------------
