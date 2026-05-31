@@ -203,6 +203,7 @@ def run():
                 times = []
                 costs = []
                 valid_sizes = []
+                results = []
 
                 for n in city_sizes:
 
@@ -264,9 +265,52 @@ def run():
                     costs.append(cost)
                     valid_sizes.append(n)
 
+                    # results.append({
+                    #     "name": name,
+                    #     "algorithm": algo,
+                    #     "time": elapsed,
+                    #     "cost": cost,
+                    # })
+
                 time_series[name] = {"x": valid_sizes, "y": times}
                 cost_series[name] = {"x": valid_sizes, "y": costs}
 
+            st.write(time_series, cost_series)
+            # df = pd.DataFrame(results)
+            # summary = df.groupby("name").agg({
+            #     "time": ["mean", "std"],
+            #     "cost": ["mean", "std"]
+            # })
+            #
+            # summary.columns = ["time_mean", "time_std", "cost_mean", "cost_std"]
+            # summary = summary.reset_index()
+            # best_time = summary.loc[summary["time_mean"].idxmin()]
+            # best_cost = summary.loc[summary["cost_mean"].idxmin()]
+            #
+            # summary["score"] = (
+            #         summary["time_mean"] / summary["time_mean"].max()
+            #         + summary["cost_mean"] / summary["cost_mean"].max()
+            # )
+            #
+            # best_overall = summary.loc[summary["score"].idxmin()]
+            #
+            # st.subheader("📌 Conclusions from Benchmarking (Multi-run Analysis)")
+            # st.markdown("### 🏎️ Fastest Algorithm (Mean Execution Time)")
+            # st.write(
+            #     f"**{best_time['name']}** is the fastest on average "
+            #     f"({best_time['time_mean']:.4f}s ± {best_time['time_std']:.4f}s)."
+            # )
+            # st.markdown("### 🎯 Best Solution Quality (Mean Cost)")
+            # st.write(
+            #     f"**{best_cost['name']}** produces the best average solution "
+            #     f"(cost = {best_cost['cost_mean']:.2f} ± {best_cost['cost_std']:.2f})."
+            # )
+            # st.markdown("### ⚖️ Best Overall Trade-off")
+            #
+            # st.write(
+            #     f"**{best_overall['name']}** achieves the best balance between speed and quality "
+            #     f"based on the combined score metric."
+            # )
             # summary = []
             #
             # for run in st.session_state.runs:
@@ -298,7 +342,41 @@ def run():
 
             st.pyplot(fig2)
         else:
-            pass
+            st.write("Running comparison...")
+
+            results = []
+
+            m, matrice = load_dataset(
+                num_cities,
+                dataset_type,
+                seed
+            )
+
+            for run in st.session_state.runs:
+                algo = run["algo"]
+                params_run = run["params"]
+                name = run["name"]
+
+                start_time = time.perf_counter()
+
+            if algo == "Nearest Neighbor":
+
+                if params_run.get("multistart", False):
+                    traseu, cost = rezolva_tsp_nn_multistart(m, matrice)
+                else:
+                    traseu, cost = rezolva_tsp_nn(m, matrice)
+
+            elif algo == "Hill Climbing":
+
+                rezultat = rezolva_hill_climbing(
+                    matrice,
+                    m,
+                    restarts=params_run["restarts"],
+                    variant=params_run["variant"],
+                    init=params_run["init"]
+                )
+
+                cost = rezultat["cost"]
             # if "Backtracking" in algorithms:
             #
             #     st.write("Running Backtracking...")

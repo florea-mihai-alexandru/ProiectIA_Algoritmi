@@ -113,6 +113,14 @@ def rezolva_tsp(
 
     start = time.perf_counter()
 
+    if mod == "toate" and n >= 15:
+        return {
+            "traseu": None,
+            "cost": None,
+            "durata": None,
+            "solutii_gasite": sol_gasite[0]
+        }
+
     _backtracking(
         matrice,
         n,
