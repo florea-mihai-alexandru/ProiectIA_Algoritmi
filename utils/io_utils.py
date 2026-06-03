@@ -197,10 +197,21 @@ def get_orase_euclidean(nr_orase, seed=555):
     return str(dirr)
 
 
-def load_dataset(n, dataset_type = "Random", seed=1):
-    seed+=n
+def load_dataset(n, dataset_type="Random", seed=1, save_dataset=False):
+    seed += n
 
     if dataset_type == "Euclidean":
-        return n, generate_euclidean_matrix(n, seed)
+        if save_dataset:
+            path = get_orase_euclidean(n, seed)
+            _, matrix = citeste_matrice(path)
+            return n, matrix
+        else:
+            return n, generate_euclidean_matrix(n, seed)
 
-    return n, generate_random_matrix(n, seed)
+    else:  # Random
+        if save_dataset:
+            path = get_orase(n, seed)
+            _, matrix = citeste_matrice(path)
+            return n, matrix
+        else:
+            return n, generate_random_matrix(n, seed)

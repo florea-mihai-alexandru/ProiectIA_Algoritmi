@@ -1,6 +1,7 @@
 import streamlit as st
 import time
 import pandas as pd
+from streamlit.elements.lib.utils import save_for_app_testing
 
 from utils.backtracking import rezolva_tsp
 from utils.nearest_neighbor import rezolva_tsp_nn, rezolva_tsp_nn_multistart
@@ -317,7 +318,7 @@ def run_single_algorithm(algo_name, n, matrix, params):
     return result
 
 
-def execute_multiple_runs(algo_name, n, dataset_type, base_seed, nr_runs, params):
+def execute_multiple_runs(algo_name, n, dataset_type, base_seed, nr_runs, params, save_datasets=False):
     """Executes a single algorithm multiple times and averages the results.
 
         Args:
@@ -338,7 +339,7 @@ def execute_multiple_runs(algo_name, n, dataset_type, base_seed, nr_runs, params
     histories = []
 
     for i in range(nr_runs):
-        _, matrix = load_dataset(n, dataset_type, base_seed + i)
+        _, matrix = load_dataset(n, dataset_type, base_seed + i, save_datasets)
 
         result = run_single_algorithm(algo_name, n, matrix, params)
         times.append(result["time"])
@@ -360,7 +361,7 @@ def execute_multiple_runs(algo_name, n, dataset_type, base_seed, nr_runs, params
 # UI RENDERING FUNCTIONS
 # ==========================================
 
-def render_scaling_results(dataset_type, seed, nr_runs, city_sizes):
+def render_scaling_results(dataset_type, seed, nr_runs, city_sizes, save_datasets):
     """Renders the scaling test experiment UI and plots.
 
         Executes all active runs over a range of city sizes to demonstrate
@@ -385,7 +386,7 @@ def render_scaling_results(dataset_type, seed, nr_runs, city_sizes):
         times, costs, valid_sizes = [], [], []
 
         for n in city_sizes:
-            result = execute_multiple_runs(algo, n, dataset_type, seed, nr_runs, params_run)
+            result = execute_multiple_runs(algo, n, dataset_type, seed, nr_runs, params_run, save_datasets)
             times.append(result["time"])
             costs.append(result["cost"])
             valid_sizes.append(n)
@@ -410,7 +411,7 @@ def render_scaling_results(dataset_type, seed, nr_runs, city_sizes):
     st.pyplot(fig2)
 
 
-def render_comparison_results(n, dataset_type, seed, nr_runs):
+def render_comparison_results(n, dataset_type, seed, nr_runs, save_datasets):
     """Renders the fixed-size comparison experiment UI, tables, and charts.
 
         Executes all active runs for a single fixed city size and compares
@@ -433,7 +434,8 @@ def render_comparison_results(n, dataset_type, seed, nr_runs):
             dataset_type=dataset_type,
             base_seed=seed,
             nr_runs=nr_runs,
-            params=current_run["params"]
+            params=current_run["params"],
+            save_datasets=save_datasets
         )
 
         results.append({
@@ -499,6 +501,7 @@ def run():
     dataset_type = st.sidebar.selectbox("Dataset type", ["Random Matrix", "Euclidean"])
     seed = st.sidebar.number_input("Dataset seed", min_value=0, value=1)
     nr_runs = st.sidebar.number_input("Number of runs per algorithm", min_value=1, value=1)
+    save_datasets = st.sidebar.checkbox("Save Datasets", False)
 
     if mode == "Algorithm comparison (fixed size)":
         num_cities = st.sidebar.slider("Number of cities", 5, 200, 30)
@@ -558,9 +561,9 @@ def run():
 
         if mode == "Scaling test (runtime vs cities)":
             city_sizes = list(range(min_cities, max_cities + 1, step))
-            render_scaling_results(dataset_type, seed, nr_runs, city_sizes)
+            render_scaling_results(dataset_type, seed, nr_runs, city_sizes, save_datasets)
         else:
-            render_comparison_results(num_cities, dataset_type, seed, nr_runs)
+            render_comparison_results(num_cities, dataset_type, seed, nr_runs, save_datasets)
 
 
 if __name__ == "__main__":
