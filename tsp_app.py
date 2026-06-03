@@ -2,12 +2,12 @@ import streamlit as st
 import time
 import pandas as pd
 
-# 1. Clean, explicit imports (No wildcards)
 from utils.backtracking import rezolva_tsp
 from utils.nearest_neighbor import rezolva_tsp_nn, rezolva_tsp_nn_multistart
 from utils.io_utils import load_dataset
 from utils.hill_climbing_tsp import rezolva_hill_climbing
 from utils.GA import rezolva_tsp_ga
+from utils.simulated_annealing import rezolva_tsp_sa
 from utils.performance import create_comparison_plot
 
 
@@ -205,27 +205,38 @@ def build_sa_ui():
         """
     return {
         "max_iter": st.sidebar.number_input("Max iterations", 100, 100000, 1000),
-        "cooling_rate": st.sidebar.slider("Cooling rate", 0.8, 0.999, 0.95),
-        "initial_temp": st.sidebar.number_input("Initial temperature", 1.0, 1000.0, 100.0)
+        "cooling_rate": st.sidebar.number_input("Cooling rate",
+            min_value=0.8,
+            max_value=0.9999,
+            value=0.995,
+            step=0.0001,
+            format="%.4f"),
+        "initial_temp": st.sidebar.number_input("Initial temperature", 1.0, 10000.0, 100.0)
     }
 
 
 def execute_sa(n, matrix, params):
     """Executes the Simulated Annealing algorithm for the TSP.
 
-        Args:
-            n (int): The number of cities.
-            matrix (list of list of float): The distance matrix representing the graph.
-            params (dict): Dictionary of parameters configured in build_sa_ui().
+    Args:
+        n (int): The number of cities.
+        matrix (list of list of float): The distance matrix representing the graph.
+        params (dict): Dictionary of parameters configured in build_sa_ui().
 
-        Returns:
-            dict: A dictionary containing:
-                - route (list of int): The calculated path (Placeholder).
-                - cost (float): The total distance of the route (Placeholder).
-        """
-    # TODO: Replace with real implementation
-    time.sleep(0.01)
-    return {"route": None, "cost": None}
+    Returns:
+        dict: A dictionary containing:
+            - route (list of int): The calculated path.
+            - cost (float): The total distance of the route.
+    """
+    sa_result = rezolva_tsp_sa(
+        n=n,
+        matrice=matrix,
+        initial_temp=params["initial_temp"],
+        cooling_rate=params["cooling_rate"],
+        max_iter=params["max_iter"]
+    )
+
+    return {"route": sa_result["traseu"], "cost": sa_result["cost"]}
 
 
 # --- REGISTRY ---
