@@ -187,6 +187,28 @@ def ruleaza_experiment():
     plt.show()
 
 
+def create_convergence_plot(histories):
+    fig, ax = plt.subplots(figsize=(8, 5))
+
+    for run_name, history in histories.items():
+
+        if not history:
+            continue
+
+        times = [point[0] for point in history]
+        costs = [point[1] for point in history]
+
+        ax.plot(times, costs, label=run_name)
+
+    ax.set_title("Hill Climbing Convergence")
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("Best Cost Found")
+    ax.grid(True)
+    ax.legend()
+
+    return fig
+
+
 if __name__ == '__main__':
    ruleaza_experiment()
 

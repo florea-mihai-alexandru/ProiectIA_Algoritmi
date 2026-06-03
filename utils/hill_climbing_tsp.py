@@ -1,4 +1,5 @@
 import random
+import time
 
 from simpleai.search import SearchProblem, hill_climbing, hill_climbing_random_restarts
 from utils.nearest_neighbor import rezolva_tsp_nn
@@ -148,27 +149,106 @@ class TSPHillClimbing(SearchProblem):
         return [0] + initial_state
 
 
-def rezolva_hill_climbing(orase, nr_orase, restarts=1, variant="swap", init="random"):
-    """
-    Solves the TSP using hill climbing with random restarts.
+def rezolva_hill_climbing(orase, nr_orase, restarts=1,
+                          variant="swap",
+                          init="random"):
 
-    Args:
-        orase (list[list[int]]): Distance matrix between cities.
-        nr_orase (int): Number of cities.
-
-    Returns:
-        tuple: A tuple containing:
-            - result: The final state found by the algorithm.
-            - result.value: The value (fitness) of the final state.
-    """
-    problem = TSPHillClimbing(orase, nr_orase, variant, init)
-
-    result = hill_climbing_random_restarts(
-        problem,
-        restarts_limit=restarts
+    problem = TSPHillClimbing(
+        orase,
+        nr_orase,
+        variant,
+        init
     )
 
+    start_time = time.perf_counter()
+
+    global_best_state = None
+    global_best_value = float("-inf")
+
+    history = []
+
+    for restart in range(restarts):
+
+        current_state = tuple(problem.generate_initial_state())
+        current_value = problem.value(current_state)
+
+        if current_value > global_best_value:
+            global_best_value = current_value
+            global_best_state = current_state
+
+            history.append(
+                (
+                    time.perf_counter() - start_time,
+                    -global_best_value
+                )
+            )
+
+        while True:
+
+            best_neighbor = None
+            best_neighbor_value = current_value
+
+            for action in problem.getVecini(current_state):
+
+                neighbor = problem.result(
+                    current_state,
+                    action
+                )
+
+                neighbor_value = problem.value(neighbor)
+
+                if neighbor_value > best_neighbor_value:
+                    best_neighbor = neighbor
+                    best_neighbor_value = neighbor_value
+
+            # local optimum reached
+            if best_neighbor is None:
+                break
+
+            current_state = best_neighbor
+            current_value = best_neighbor_value
+
+            # update global best
+            if current_value > global_best_value:
+
+                global_best_value = current_value
+                global_best_state = current_state
+
+                history.append(
+                    (
+                        time.perf_counter() - start_time,
+                        -global_best_value
+                    )
+                )
+
     return {
-        "traseu": result.state,
-        "cost": -result.value,   # because value is negative distance
+        "traseu": list(global_best_state),
+        "cost": -global_best_value,
+        "history": history
     }
+
+
+# def rezolva_hill_climbing(orase, nr_orase, restarts=1, variant="swap", init="random"):
+#     """
+#     Solves the TSP using hill climbing with random restarts.
+#
+#     Args:
+#         orase (list[list[int]]): Distance matrix between cities.
+#         nr_orase (int): Number of cities.
+#
+#     Returns:
+#         tuple: A tuple containing:
+#             - result: The final state found by the algorithm.
+#             - result.value: The value (fitness) of the final state.
+#     """
+#     problem = TSPHillClimbing(orase, nr_orase, variant, init)
+#
+#     result = hill_climbing_random_restarts(
+#         problem,
+#         restarts_limit=restarts
+#     )
+#
+#     return {
+#         "traseu": result.state,
+#         "cost": -result.value,   # because value is negative distance
+#     }

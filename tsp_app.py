@@ -8,7 +8,7 @@ from utils.io_utils import load_dataset
 from utils.hill_climbing_tsp import rezolva_hill_climbing
 from utils.GA import rezolva_tsp_ga
 from utils.simulated_annealing import rezolva_tsp_sa
-from utils.performance import create_comparison_plot
+from utils.performance import create_comparison_plot, create_convergence_plot
 
 
 # ==========================================
@@ -135,7 +135,7 @@ def execute_hc(n, matrix, params):
         variant=params["variant"],
         init=params["init"]
     )
-    return {"route": hc_result["traseu"], "cost": hc_result["cost"]}
+    return {"route": hc_result["traseu"], "cost": hc_result["cost"], "history": hc_result["history"]}
 
 
 def build_ga_ui():
@@ -191,7 +191,7 @@ def execute_ga(n, matrix, params):
         keep_elitism=params["elitism"],
         start_from_20nn=params["nn_seeding"]
     )
-    return {"route": ga_result["traseu"], "cost": ga_result["cost"]}
+    return {"route": ga_result["traseu"], "cost": ga_result["cost"], "history": ga_result["history"]}
 
 
 def build_sa_ui():
@@ -204,14 +204,14 @@ def build_sa_ui():
                 - initial_temp (float): The starting temperature.
         """
     return {
-        "max_iter": st.sidebar.number_input("Max iterations", 100, 100000, 1000),
+        "max_iter": st.sidebar.number_input("Max iterations", 100, 1000000, 1000),
         "cooling_rate": st.sidebar.number_input("Cooling rate",
             min_value=0.8,
             max_value=0.9999,
             value=0.995,
             step=0.0001,
             format="%.4f"),
-        "initial_temp": st.sidebar.number_input("Initial temperature", 1.0, 10000.0, 100.0)
+        "initial_temp": st.sidebar.number_input("Initial temperature", 1.0, 100000.0, 100.0)
     }
 
 
@@ -236,7 +236,7 @@ def execute_sa(n, matrix, params):
         max_iter=params["max_iter"]
     )
 
-    return {"route": sa_result["traseu"], "cost": sa_result["cost"]}
+    return {"route": sa_result["traseu"], "cost": sa_result["cost"], "history": sa_result["history"]}
 
 
 # --- REGISTRY ---
@@ -335,6 +335,7 @@ def execute_multiple_runs(algo_name, n, dataset_type, base_seed, nr_runs, params
         """
     times = []
     costs = []
+    histories = []
 
     for i in range(nr_runs):
         _, matrix = load_dataset(n, dataset_type, base_seed + i)
@@ -345,9 +346,13 @@ def execute_multiple_runs(algo_name, n, dataset_type, base_seed, nr_runs, params
         if result["cost"] is not None:
             costs.append(result["cost"])
 
+        if i == 0 and "history" in result:
+            histories = result["history"]
+
     return {
         "time": sum(times) / len(times),
         "cost": sum(costs) / len(costs) if costs else None,
+        "history": histories
     }
 
 
@@ -419,6 +424,7 @@ def render_comparison_results(n, dataset_type, seed, nr_runs):
         """
     st.write("Running comparison...")
     results = []
+    histories_dic = {}
 
     for current_run in st.session_state.runs:
         result = execute_multiple_runs(
@@ -436,6 +442,9 @@ def render_comparison_results(n, dataset_type, seed, nr_runs):
             "Avg Cost": result["cost"],
             "Avg Time (s)": result["time"]
         })
+
+        if result.get("history"):
+            histories_dic[current_run["name"]] = result["history"]
 
     df = pd.DataFrame(results)
     st.subheader("Results")
@@ -455,6 +464,12 @@ def render_comparison_results(n, dataset_type, seed, nr_runs):
         st.metric("Best Solution", best_cost["Run Name"], f"Cost = {best_cost['Avg Cost']:.2f}")
     with col2:
         st.metric("Fastest Algorithm", best_time["Run Name"], f"{best_time['Avg Time (s)']:.4f}s")
+
+    if histories_dic:
+        st.subheader("Convergence")
+
+        fig = create_convergence_plot(histories_dic)
+        st.pyplot(fig)
 
 
 # ==========================================

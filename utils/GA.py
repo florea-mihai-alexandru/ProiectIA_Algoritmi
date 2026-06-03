@@ -382,15 +382,12 @@ def rezolva_tsp_ga(
     tip_selectie="tournament",
     k_tournament=3,
     keep_elitism=2,
-    start_from_20nn = True
+    start_from_20nn=True
 ):
-    """
-    Wrapper compatibil Streamlit (same style as other algorithms).
-    """
 
     rata_mutatie = int(rata_mutatie * 100)
     global DIST_MATRIX
-    DIST_MATRIX = matrice  # IMPORTANT: inject matrix
+    DIST_MATRIX = matrice
 
     populatie_initiala = genereaza_populatie(pop_size, n, start_from_20nn)
 
@@ -418,11 +415,23 @@ def rezolva_tsp_ga(
     traseu = [int(x) for x in solutie]
     cost = -fitness
 
+    # =========================
+    # HISTORY BUILD (NEW PART)
+    # =========================
+    history = []
+    start_time = start  # or time.perf_counter() baseline
+
+    best_fitness_per_gen = ga_instance.best_solutions_fitness
+
+    for i, f in enumerate(best_fitness_per_gen):
+        history.append((i, -f))   # (generation, cost)
+
     return {
         "traseu": traseu,
         "cost": cost,
         "durata": durata,
-        "ga_instance": ga_instance  # useful for plotting convergence
+        "history": history,
+        "ga_instance": ga_instance
     }
 # ══════════════════════════════════════════════════════════════════
 # 8. PUNCT DE INTRARE
@@ -430,7 +439,4 @@ def rezolva_tsp_ga(
 
 if __name__ == "__main__":
     n, DIST_MATRIX = load_dataset(10)
-    # print(DIST_MATRIX)
     genereaza_populatie(100, 10)
-    # print(DIST_MATRIX)
-    # print(rezolva_tsp_nn(100, DIST_MATRIX))
