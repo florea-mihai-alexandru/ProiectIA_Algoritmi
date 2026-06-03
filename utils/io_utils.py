@@ -197,7 +197,7 @@ def get_orase_euclidean(nr_orase, seed=555):
     return str(dirr)
 
 
-def load_dataset(n, dataset_type, seed=1):
+def load_dataset(n, dataset_type = "Random", seed=1):
     seed+=n
 
     if dataset_type == "Euclidean":

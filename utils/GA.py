@@ -4,7 +4,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 import time
+
+from utils.nearest_neighbor import rezolva_tsp_nn
 from .io_utils import *
+# from io_utils import *
 
 # ══════════════════════════════════════════════════════════════════
 # 1. DEFINIREA PROBLEMEI - ORAȘE ȘI DISTANȚE
@@ -29,8 +32,8 @@ COORD = np.array([ORASE_TEST[i][1] for i in range(N_ORASE)], dtype=float)
 NUME_ORASE = [ORASE_TEST[i][0] for i in range(N_ORASE)]
 
 
-DIST_MATRIX = calculeaza_matrice_distante(COORD)
-# DIST_MATRIX = []
+# DIST_MATRIX = calculeaza_matrice_distante(COORD)
+DIST_MATRIX = []
 
 def chage_dist(dist):
     global DIST_MATRIX
@@ -113,13 +116,31 @@ def swap_mutation(offspring, ga_instance):
 # 4. GENERARE POPULAȚIE INIȚIALĂ
 # ══════════════════════════════════════════════════════════════════
 
-def genereaza_populatie(pop_size, n_orase):
+def genereaza_populatie(pop_size, n_orase, start_from_nn = True):
     """Generează pop_size permutări aleatoare distincte ale celor n_orase orașe."""
     pop = []
-    for _ in range(pop_size):
-        perm = list(range(n_orase))
-        random.shuffle(perm)
-        pop.append(perm)
+    # pop2 = []
+
+    if start_from_nn:
+        for _ in range(pop_size // 5):
+            start = random.randint(0, n_orase - 1)
+            perm, _ = rezolva_tsp_nn(n_orase, DIST_MATRIX, start=start)
+
+            perm.pop()
+            pop.append(perm)
+
+        for _ in range(pop_size - len(pop)):
+            perm = list(range(n_orase))
+            random.shuffle(perm)
+            pop.append(perm)
+
+    else:
+        for _ in range(pop_size):
+            perm = list(range(n_orase))
+            random.shuffle(perm)
+            pop.append(perm)
+
+    # print(pop)
     return np.array(pop, dtype=int)
 
 
@@ -357,19 +378,21 @@ def rezolva_tsp_ga(
     matrice,
     pop_size=100,
     n_generatii=300,
-    rata_mutatie=40,
+    rata_mutatie=0.4,
     tip_selectie="tournament",
     k_tournament=3,
-    keep_elitism=2
+    keep_elitism=2,
+    start_from_20nn = True
 ):
     """
     Wrapper compatibil Streamlit (same style as other algorithms).
     """
 
+    rata_mutatie = int(rata_mutatie * 100)
     global DIST_MATRIX
     DIST_MATRIX = matrice  # IMPORTANT: inject matrix
 
-    populatie_initiala = genereaza_populatie(pop_size, n)
+    populatie_initiala = genereaza_populatie(pop_size, n, start_from_20nn)
 
     ga_instance = pygad.GA(
         num_generations=n_generatii,
@@ -406,21 +429,8 @@ def rezolva_tsp_ga(
 # ══════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
-    random.seed(42)
-    np.random.seed(42)
-
-    print("=== Rulare de bază (pop=100, gen=500, mut=50%) ===")
-    ga, dist, durata = ruleaza_ga(pop_size=100, n_generatii=500, rata_mutatie=50)
-    solutie, _, _ = ga.best_solution()
-
-    plot_convergenta(ga, titlu="Curba de convergență - configurație de bază")
-    plot_ruta(solutie, titlu="Ruta găsită de algoritmul genetic")
-
-    print("\n=== Studiu: impact mărime populație ===")
-    studiu_parametri_populatie()
-
-    print("\n=== Studiu: impact rată mutație ===")
-    studiu_parametri_mutatie()
-
-    print("\n=== Studiu: tip selecție părinți ===")
-    studiu_tip_selectie()
+    n, DIST_MATRIX = load_dataset(10)
+    # print(DIST_MATRIX)
+    genereaza_populatie(100, 10)
+    # print(DIST_MATRIX)
+    # print(rezolva_tsp_nn(100, DIST_MATRIX))
