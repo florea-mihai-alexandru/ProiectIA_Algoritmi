@@ -1,230 +1,173 @@
+# NLP_app.py
 import streamlit as st
-import time
-import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 
-from sklearn.datasets import fetch_20newsgroups
-from sklearn.model_selection import train_test_split
-
-from sklearn.feature_extraction.text import (
-    CountVectorizer,
-    TfidfVectorizer
-)
-
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import LogisticRegression
-
+from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import (
-    accuracy_score,
-    precision_score,
-    recall_score,
-    f1_score
+    confusion_matrix,
+    classification_report,
+    accuracy_score
 )
 
-
-def load_dataset():
-
-    categories = [
-        'sci.space',
-        'rec.sport.baseball',
-        'comp.graphics'
-    ]
-
-    dataset = fetch_20newsgroups(
-        subset='all',
-        categories=categories,
-        remove=('headers', 'footers', 'quotes')
-    )
-
-    return dataset.data, dataset.target
+np.random.seed(42)
+plt.style.use('default')
 
 
 def run():
+    st.title("🔤 NLP Classification Tool")
+    st.write("Train on `train.csv` • Test on `test.csv`")
 
-    st.title("NLP Text Classification Analyzer")
+    # File uploaders
+    col1, col2 = st.columns(2)
+    with col1:
+        train_file = st.file_uploader("Upload **train.csv**", type=["csv"], key="train")
+    with col2:
+        test_file = st.file_uploader("Upload **test.csv**", type=["csv"], key="test")
 
-    st.write("Compare NLP vectorization and classification methods.")
+    if train_file is None or test_file is None:
+        st.info("Please upload both **train.csv** and **test.csv** files.")
+        st.markdown("""
+        **Expected format (both files):**
+        - Column with text (e.g. `text`, `review`, `sentence`)
+        - Column with labels (e.g. `label`, `sentiment`, `polarity`)
+        """)
+        return
 
-    mode = st.sidebar.radio(
-        "Experiment mode",
-        [
-            "Single experiment",
-            "Method comparison"
-        ]
+    # Load datasets
+    try:
+        train_df = pd.read_csv(train_file)
+        test_df = pd.read_csv(test_file)
+        st.success(f"Train shape: {train_df.shape} | Test shape: {test_df.shape}")
+    except Exception as e:
+        st.error(f"Error loading files: {e}")
+        return
+
+    # Column selection
+    st.subheader("Column Selection")
+    all_cols = train_df.columns.tolist()
+
+    col1, col2 = st.columns(2)
+    with col1:
+        text_col = st.selectbox("Text Column", options=all_cols, index=0)
+    with col2:
+        label_col = st.selectbox("Label Column", options=all_cols, index=1)
+
+    if st.button("Start Training & Evaluation", type="primary"):
+        with st.spinner("Training models..."):
+            analyze_with_train_test(train_df, test_df, text_col, label_col)
+
+
+def analyze_with_train_test(train_df, test_df, text_col, label_col):
+    # Extract data
+    X_train = train_df[text_col].astype(str)
+    y_train = train_df[label_col]
+    X_test = test_df[text_col].astype(str)
+    y_test = test_df[label_col]
+
+    # Label distribution
+    st.subheader("Label Distribution")
+    fig, ax = plt.subplots(1, 2, figsize=(12, 5))
+    y_train.value_counts().plot(kind='bar', ax=ax[0], title="Train Labels")
+    y_test.value_counts().plot(kind='bar', ax=ax[1], title="Test Labels")
+    st.pyplot(fig)
+    plt.close()
+
+    # Vectorization
+    st.info("Vectorizing text with TF-IDF...")
+    vectorizer = TfidfVectorizer(
+        max_features=15000,
+        ngram_range=(1, 2),
+        stop_words='english',
+        min_df=2
     )
 
-    vectorizers = st.sidebar.multiselect(
-        "Vectorization methods",
-        [
-            "Bag of Words",
-            "TF-IDF"
-        ],
-        default=["Bag of Words", "TF-IDF"]
-    )
+    X_train_vec = vectorizer.fit_transform(X_train)
+    X_test_vec = vectorizer.transform(X_test)
 
-    classifiers = st.sidebar.multiselect(
-        "Classifiers",
-        [
-            "Naive Bayes",
-            "Logistic Regression"
-        ],
-        default=["Naive Bayes"]
-    )
-
-    test_size = st.sidebar.slider(
-        "Test size",
-        0.1,
-        0.5,
-        0.2
-    )
-
-    max_features = st.sidebar.slider(
-        "Max features",
-        100,
-        10000,
-        3000
-    )
-
-    run_button = st.button("Run NLP Analysis")
-
-    st.write(f"Selected vectorizers: {vectorizers}")
-    st.write(f"Selected classifiers: {classifiers}")
-
-    if run_button:
-
-        progress = st.progress(0)
-
-        for i in range(100):
-            time.sleep(0.01)
-            progress.progress(i + 1)
-
-        texts, labels = load_dataset()
-
-        X_train, X_test, y_train, y_test = train_test_split(
-            texts,
-            labels,
-            test_size=test_size,
-            random_state=42
+    # Models
+    models = {
+        "Naive Bayes": MultinomialNB(),
+        "Logistic Regression": LogisticRegression(max_iter=1000, random_state=42, n_jobs=-1),
+        "SVM": SVC(kernel='linear', probability=True, random_state=42),
+        "Random Forest": RandomForestClassifier(
+            n_estimators=200, n_jobs=-1, random_state=42, class_weight='balanced'
         )
+    }
 
-        results = []
+    results = {}
+    confusion_matrices = {}
 
-        for vec_name in vectorizers:
+    progress_bar = st.progress(0)
+    status = st.empty()
 
-            if vec_name == "Bag of Words":
-                vectorizer = CountVectorizer(
-                    max_features=max_features,
-                    stop_words='english'
-                )
+    for i, (name, model) in enumerate(models.items()):
+        status.text(f"Training {name}...")
+        model.fit(X_train_vec, y_train)
+        y_pred = model.predict(X_test_vec)
 
-            elif vec_name == "TF-IDF":
-                vectorizer = TfidfVectorizer(
-                    max_features=max_features,
-                    stop_words='english'
-                )
+        acc = accuracy_score(y_test, y_pred)
+        cm = confusion_matrix(y_test, y_pred)
 
-            X_train_vec = vectorizer.fit_transform(X_train)
-            X_test_vec = vectorizer.transform(X_test)
+        results[name] = {
+            'accuracy': acc,
+            'report': classification_report(y_test, y_pred, zero_division=0),
+            'predictions': y_pred
+        }
+        confusion_matrices[name] = cm
 
-            for clf_name in classifiers:
+        progress_bar.progress((i + 1) / len(models))
 
-                start_time = time.time()
+    # Results
+    st.success("✅ Training & Evaluation Completed!")
 
-                if clf_name == "Naive Bayes":
-                    model = MultinomialNB()
+    st.subheader("📊 Model Comparison")
+    comparison_df = pd.DataFrame({
+        name: {'Accuracy': res['accuracy']} for name, res in results.items()
+    }).T
+    st.dataframe(comparison_df.style.format("{:.4f}"), use_container_width=True)
 
-                elif clf_name == "Logistic Regression":
-                    model = LogisticRegression(max_iter=1000)
+    # Detailed reports
+    st.subheader("📋 Detailed Reports")
+    for name, res in results.items():
+        with st.expander(f"{name} — Accuracy: {res['accuracy']:.4f}"):
+            st.text(res['report'])
 
-                model.fit(X_train_vec, y_train)
+    # Confusion Matrices
+    st.subheader("🌀 Confusion Matrices")
+    plot_confusion_matrices(confusion_matrices, y_test, results)
 
-                predictions = model.predict(X_test_vec)
 
-                runtime = time.time() - start_time
+def plot_confusion_matrices(confusion_matrices, y_test, results):
+    class_names = sorted(y_test.unique())
+    n = len(confusion_matrices)
+    cols = 2
+    rows = (n + 1) // cols
 
-                accuracy = accuracy_score(y_test, predictions)
+    fig, axes = plt.subplots(rows, cols, figsize=(15, 10))
+    axes = axes.ravel() if n > 1 else [axes]
 
-                precision = precision_score(
-                    y_test,
-                    predictions,
-                    average='weighted'
-                )
+    for i, (name, cm) in enumerate(confusion_matrices.items()):
+        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
+                    xticklabels=class_names, yticklabels=class_names,
+                    ax=axes[i])
+        axes[i].set_title(f'{name}\nAccuracy: {results[name]["accuracy"]:.4f}')
+        axes[i].set_xlabel('Predicted')
+        axes[i].set_ylabel('True')
 
-                recall = recall_score(
-                    y_test,
-                    predictions,
-                    average='weighted'
-                )
+    for j in range(i + 1, len(axes)):
+        axes[j].set_visible(False)
 
-                f1 = f1_score(
-                    y_test,
-                    predictions,
-                    average='weighted'
-                )
+    plt.tight_layout()
+    st.pyplot(fig)
+    plt.close()
 
-                results.append({
-                    "Method": f"{vec_name} + {clf_name}",
-                    "Accuracy": accuracy,
-                    "Precision": precision,
-                    "Recall": recall,
-                    "F1 Score": f1,
-                    "Runtime": runtime
-                })
 
-        results_df = pd.DataFrame(results)
-
-        st.success("NLP analysis completed!")
-
-        tab1, tab2, tab3 = st.tabs(
-            ["Summary", "Metrics", "Charts"]
-        )
-
-        with tab1:
-
-            st.subheader("Experiment Results")
-
-            st.dataframe(results_df)
-
-        with tab2:
-
-            for index, row in results_df.iterrows():
-
-                st.write(f"### {row['Method']}")
-
-                st.write(f"Accuracy: {row['Accuracy']:.4f}")
-                st.write(f"Precision: {row['Precision']:.4f}")
-                st.write(f"Recall: {row['Recall']:.4f}")
-                st.write(f"F1 Score: {row['F1 Score']:.4f}")
-                st.write(f"Runtime: {row['Runtime']:.4f} seconds")
-
-        with tab3:
-
-            fig, ax = plt.subplots()
-
-            ax.bar(
-                results_df["Method"],
-                results_df["Accuracy"]
-            )
-
-            ax.set_title("Accuracy Comparison")
-            ax.set_xlabel("Methods")
-            ax.set_ylabel("Accuracy")
-
-            plt.xticks(rotation=15)
-
-            st.pyplot(fig)
-
-            fig2, ax2 = plt.subplots()
-
-            ax2.bar(
-                results_df["Method"],
-                results_df["F1 Score"]
-            )
-
-            ax2.set_title("F1 Score Comparison")
-            ax2.set_xlabel("Methods")
-            ax2.set_ylabel("F1 Score")
-
-            plt.xticks(rotation=15)
-
-            st.pyplot(fig2)
+if __name__ == "__main__":
+    run()
