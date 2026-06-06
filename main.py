@@ -29,14 +29,14 @@ if "page" in st.session_state:
 
         st.subheader("Reject AI embrace Humanity")
 
-        st.image("assets/RaieH.jpeg", width=420)
+        # st.image("assets/RaieH.jpeg", width=420)
         col1, col2, col3 = st.columns(3)
         with col1:
-            # st.image("assets/orange.jpg", width=200)
+            st.image("assets/Mihai.jpeg", width=200)
             st.subheader("Membru 1: Florea Mihai-Alexandru")
 
         with col2:
-            # st.image("assets/prune.jpg", width=200)
+            st.image("assets/Vlad.jpeg", width=200)
             st.subheader("Membru 2: Cebotari Vlad")
 
         st.subheader("An 3, Disciplina Inteligență artificială")
