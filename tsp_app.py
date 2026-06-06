@@ -156,7 +156,7 @@ def build_ga_ui():
     params["population_size"] = st.sidebar.number_input("Population size", 10, 500, 50, 10)
     params["mutation_rate"] = st.sidebar.slider("Mutation rate", 0.0, 1.0, 0.1, 0.01)
     params["generations"] = st.sidebar.number_input("Generations", 10, 2000, 300, 50)
-    params["selection_type"] = st.sidebar.selectbox("Selection type", ["tournament", "roulette", "rank"])
+    params["selection_type"] = st.sidebar.selectbox("Selection type", ["tournament", "rank"])
 
     if params["selection_type"] == "tournament":
         params["tournament_size"] = st.sidebar.slider("Tournament size", 2, 10, 3)
