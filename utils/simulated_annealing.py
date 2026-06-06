@@ -5,65 +5,135 @@ import time
 
 def calculeaza_cost(traseu, matrice):
     cost = 0
+
     for i in range(len(traseu) - 1):
         cost += matrice[traseu[i]][traseu[i + 1]]
+
     return cost
 
 
-def genereaza_vecin(traseu):
+def nearest_neighbor_start(matrice):
+
+    n = len(matrice)
+
+    nevizitate = set(range(1, n))
+
+    traseu = [0]
+    curent = 0
+
+    while nevizitate:
+
+        urmator = min(
+            nevizitate,
+            key=lambda x: matrice[curent][x]
+        )
+
+        traseu.append(urmator)
+
+        nevizitate.remove(urmator)
+
+        curent = urmator
+
+    traseu.append(0)
+
+    return traseu
+
+
+def genereaza_vecin_2opt(traseu):
+
     vecin = traseu[:]
-    i, j = random.sample(range(1, len(traseu) - 1), 2)
-    vecin[i], vecin[j] = vecin[j], vecin[i]
+
+    i, j = sorted(
+        random.sample(
+            range(1, len(traseu) - 1),
+            2
+        )
+    )
+
+    vecin[i:j + 1] = reversed(
+        vecin[i:j + 1]
+    )
+
     return vecin
 
 
-def rezolva_tsp_sa(n, matrice,
-                   initial_temp=100.0,
-                   cooling_rate=0.95,
-                   max_iter=1000):
+def rezolva_tsp_sa(
+        n,
+        matrice,
+        initial_temp=100.0,
+        cooling_rate=0.995,
+        max_iter=1000):
 
     start_time = time.perf_counter()
 
-    noduri = list(range(1, n))
-    random.shuffle(noduri)
+    traseu_curent = nearest_neighbor_start(
+        matrice
+    )
 
-    traseu_curent = [0] + noduri + [0]
-    cost_curent = calculeaza_cost(traseu_curent, matrice)
+    cost_curent = calculeaza_cost(
+        traseu_curent,
+        matrice
+    )
 
     traseu_best = traseu_curent[:]
     cost_best = cost_curent
 
     temperatura = initial_temp
 
-    history = []
+    history = [
+        (0.0, cost_best)
+    ]
 
-    # initial point
-    history.append((0.0, cost_best))
+    accepted = 0
 
     for i in range(max_iter):
 
-        vecin = genereaza_vecin(traseu_curent)
-        cost_vecin = calculeaza_cost(vecin, matrice)
+        vecin = genereaza_vecin_2opt(
+            traseu_curent
+        )
 
-        diferenta = cost_vecin - cost_curent
+        cost_vecin = calculeaza_cost(
+            vecin,
+            matrice
+        )
 
-        # acceptance rule
-        if diferenta < 0:
+        delta = cost_vecin - cost_curent
+
+        if delta < 0:
+
             traseu_curent = vecin
             cost_curent = cost_vecin
+
+            accepted += 1
+
         else:
-            if random.random() < math.exp(-diferenta / temperatura):
+
+            try:
+                prob = math.exp(
+                    -delta / temperatura
+                )
+            except OverflowError:
+                prob = 0
+
+            if random.random() < prob:
+
                 traseu_curent = vecin
                 cost_curent = cost_vecin
 
-        # update best
+                accepted += 1
+
         if cost_curent < cost_best:
+
             cost_best = cost_curent
             traseu_best = traseu_curent[:]
 
         if i % 10 == 0:
+
             history.append(
-                (time.perf_counter() - start_time, cost_best)
+                (
+                    time.perf_counter() - start_time,
+                    cost_best
+                )
             )
 
         temperatura *= cooling_rate
@@ -71,8 +141,14 @@ def rezolva_tsp_sa(n, matrice,
         if temperatura < 0.001:
             break
 
+    acceptance_rate = (
+        accepted / (i + 1)
+        if i > 0 else 0
+    )
+
     return {
         "traseu": traseu_best,
         "cost": cost_best,
-        "history": history
+        "history": history,
+        "acceptance_rate": acceptance_rate
     }
